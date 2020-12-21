@@ -13,6 +13,7 @@ public enum DependencyInjection {
     private RenameFile renameFile = new RenameFileImpl();
     private DeleteFile deleteFile = new DeleteFileImpl();
     private CopyFile copyFile = new CopyFileImpl();
+    private MoveDirectory moveDirectory = new MoveDirectoryImpl();
     private FileManager fileManager = new FileManagerImpl(
             createDirectory,
             createFile,
@@ -20,10 +21,6 @@ public enum DependencyInjection {
             deleteFile,
             copyFile
     );
-
-    public DependencyInjection getInstance() {
-        return INSTANCE;
-    }
 
     public CreateDirectory getCreateDirectory() {
         return createDirectory;
@@ -35,5 +32,9 @@ public enum DependencyInjection {
 
     public FileManager getFileManager() {
         return fileManager;
+    }
+
+    public MoveDirectory getMoveDirectory() {
+        return moveDirectory;
     }
 }

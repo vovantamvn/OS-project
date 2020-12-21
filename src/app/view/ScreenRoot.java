@@ -2,12 +2,11 @@ package app.view;
 
 import app.constant.AppConstant;
 import app.di.DependencyInjection;
-import app.event.BackFolder;
+import app.event.ChangePath;
 import app.event.Func;
-import app.event.MoveToChildren;
 import app.event.OnItemSelected;
-import app.service.FileManager;
-import app.service.impl.FileManagerImpl;
+import app.service.MoveDirectory;
+import app.service.impl.MoveDirectoryImpl;
 import app.view.popup.ConfirmPopUp;
 import app.view.popup.CustomTextInput;
 import app.view.popup.MessagePopUp;
@@ -20,59 +19,57 @@ import javafx.scene.layout.HBox;
 import java.io.File;
 import java.util.Optional;
 
-public class ScreenRoot extends HBox implements MoveToChildren, BackFolder, OnItemSelected, Func {
+public class ScreenRoot extends HBox implements OnItemSelected, Func {
     private final ListView<File> listView;
-    private final FileManager fileManager123;
+    private final MoveDirectory moveDirectory;
     private File selectedFile;
 
     private final app.FileManager fileManager;
+    private final ChangePath changePath;
 
-    public ScreenRoot() {
+    public ScreenRoot(ChangePath changePath) {
         super();
         this.setWidth(AppConstant.WIDTH);
         this.setHeight(AppConstant.HEIGHT);
 
+        this.changePath = changePath;
         this.fileManager = DependencyInjection.INSTANCE.getFileManager();
-
-        this.fileManager123 = new FileManagerImpl();
-
-        ObservableList<File> files = FXCollections.observableArrayList(
-                this.fileManager123.getAllFiles()
-        );
-
-        this.listView = new ListView<>(files);
-
-        this.getChildren().add(new ScreenController(this, this));
-        this.getChildren().add(listView);
+        this.moveDirectory = DependencyInjection.INSTANCE.getMoveDirectory();
 
         double prefWidth = this.getWidth() - AppConstant.LEFT;
+        this.listView = new ListView<>();
         this.listView.setPrefWidth(prefWidth);
+
+        this.getChildren().add(new ScreenController(this));
+        this.getChildren().add(listView);
+
         initItemListview();
+        refreshItem();
     }
 
     public void initItemListview() {
         this.listView.setCellFactory(fileListView -> new ItemListView());
-        this.listView.setOnMouseClicked(new DoubleClickItem(this, this));
+        this.listView.setOnMouseClicked(new DoubleClickItem(this::moveToChildren, this));
     }
 
     @Override
     public void moveToChildren() {
         ObservableList<File> items = this.listView.getItems();
         File file = this.listView.getSelectionModel().getSelectedItem();
-        if (this.fileManager123.moveToChildren(file)) {
+        if (this.moveDirectory.moveToChildren(file)) {
             this.refreshItem();
         }
     }
 
     @Override
     public void moveToHome() {
-        this.fileManager123.backToHome();
+        this.moveDirectory.backToHome();
         this.refreshItem();
     }
 
     @Override
     public void backToParent() {
-        if (this.fileManager123.backToParent()) {
+        if (this.moveDirectory.backToParent()) {
             this.refreshItem();
         }
     }
@@ -80,7 +77,10 @@ public class ScreenRoot extends HBox implements MoveToChildren, BackFolder, OnIt
     private void refreshItem() {
         ObservableList<File> items = this.listView.getItems();
         items.clear();
-        items.addAll(this.fileManager123.getAllFiles());
+        items.addAll(this.moveDirectory.getAllFiles());
+
+        String path = moveDirectory.getCurrentPath();
+        changePath.change(path);
     }
 
     @Override
@@ -132,15 +132,11 @@ public class ScreenRoot extends HBox implements MoveToChildren, BackFolder, OnIt
 
     @Override
     public void createDirectory() {
-        if (selectedFile == null) {
-            return;
-        }
-
         CustomTextInput customTextInput = new CustomTextInput("Dialog", "Tạo thư mục", "Nhập tên");
         Optional<String> optName = customTextInput.showAndWait();
 
         optName.ifPresent(name -> {
-            String path = selectedFile.getPath();
+            String path = moveDirectory.getCurrentPath();
             boolean result = fileManager.createDirectory(path, name);
 
             if (result) {
@@ -155,15 +151,11 @@ public class ScreenRoot extends HBox implements MoveToChildren, BackFolder, OnIt
 
     @Override
     public void createFile() {
-        if (selectedFile == null) {
-            return;
-        }
-
         CustomTextInput customTextInput = new CustomTextInput("Dialog", "Tạo tệp", "Nhập tên");
         Optional<String> optName = customTextInput.showAndWait();
 
         optName.ifPresent(name -> {
-            String path = selectedFile.getPath();
+            String path = moveDirectory.getCurrentPath();
             boolean result = fileManager.createFile(path, name);
 
             if (result) {

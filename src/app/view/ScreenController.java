@@ -1,7 +1,6 @@
 package app.view;
 
 import app.constant.AppConstant;
-import app.event.BackFolder;
 import app.event.Func;
 import javafx.scene.control.Button;
 import javafx.scene.layout.VBox;
@@ -14,12 +13,10 @@ public class ScreenController extends VBox {
     private final Button createDirectory;
     private final Button createFile;
     private final Button copyFile;
-    private final BackFolder backFolder;
     private final Func func;
 
-    public ScreenController(BackFolder backFolder, Func func) {
+    public ScreenController(Func func) {
         super();
-        this.backFolder = backFolder;
         this.func = func;
         this.prefWidth(AppConstant.LEFT);
 
@@ -41,8 +38,8 @@ public class ScreenController extends VBox {
                 this.copyFile
         );
 
-        this.backButton.setOnMouseClicked(mouseEvent -> this.backFolder.backToParent());
-        this.homeButton.setOnMouseClicked(mouseEvent -> this.backFolder.moveToHome());
+        this.backButton.setOnMouseClicked(mouseEvent -> this.func.backToParent());
+        this.homeButton.setOnMouseClicked(mouseEvent -> this.func.moveToHome());
         this.renameButton.setOnMouseClicked(mouseEvent -> this.func.rename());
         this.deleteButton.setOnMouseClicked(mouseEvent -> this.func.delete());
         this.createDirectory.setOnMouseClicked(mouseEvent -> this.func.createDirectory());
